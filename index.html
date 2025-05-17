@@ -87,7 +87,7 @@
   <div id="results"></div>
 
   <script>
-    // Dark mode toggle with icon change
+    // Dark mode toggle
     function toggleDarkMode() {
       const body = document.body;
       const btn = document.getElementById('darkModeBtn');
@@ -96,7 +96,7 @@
       btn.textContent = isDark ? '☀️' : '🌙';
     }
 
-    // Restore theme preference on load
+    // Restore dark mode preference
     window.addEventListener('DOMContentLoaded', () => {
       if (localStorage.getItem('darkMode') === 'on') {
         document.body.classList.add('dark');
@@ -104,43 +104,63 @@
       }
     });
 
-    // Price map
-    const prices = {
-      "knight axe": 2000,
-      "tower shield": 8000,
-      "bonebreaker": 10000,
-      "dragon hammer": 2000,
-      "dreaded cleaver": 15000,
-      "onyx flail": 22000,
-      "skull staff": 6000,
-      "titan axe": 4000,
-      "warrior helmet": 5000,
-      "knight legs": 5000,
-      "knight armor": 5000
+    // Full item price list
+    const items = {
+      "ancient shield": 900, "black shield": 800, "bonebreaker": 10000, "dark armor": 400,
+      "dark helmet": 250, "dragon hammer": 2000, "dreaded cleaver": 15000, "earth knight axe": 2000,
+      "energy knight axe": 2000, "fiery knight axe": 2000, "giant sword": 17000, "haunted blade": 8000,
+      "icy knight axe": 2000, "knight armor": 5000, "knight axe": 2000, "knight legs": 5000,
+      "mystic turban": 150, "onyx flail": 22000, "ornamented axe": 20000, "poison dagger": 50,
+      "scimitar": 150, "serpent sword": 900, "skull staff": 6000, "strange helmet": 500,
+      "titan axe": 4000, "tower shield": 8000, "vampire shield": 15000, "warrior helmet": 5000,
+      "ankh": 100, "dragon necklace": 100, "dwarven ring": 100, "energy ring": 100, "glacial rod": 6500,
+      "hailstorm rod": 3000, "life ring": 50, "might ring": 250, "moonlight rod": 200, "muck rod": 6000,
+      "mysterious fetish": 50, "necrotic rod": 1000, "northwind rod": 1500, "protection amulet": 100,
+      "ring of healing": 100, "silver amulet": 50, "snakebite rod": 100, "springsprout rod": 3600,
+      "strange talisman": 30, "terra rod": 2000, "time ring": 100, "underworld rod": 4400,
+      "angelic axe": 5000, "blue robe": 10000, "bonelord shield": 1200, "boots of haste": 30000,
+      "broadsword": 500, "butcher's axe": 18000, "crown armor": 12000, "crown helmet": 2500,
+      "crown legs": 12000, "crown shield": 8000, "crusader helmet": 6000, "dragon lance": 9000,
+      "dragon shield": 4000, "earth spike sword": 1000, "earth war hammer": 1200, "energy spike sword": 1000,
+      "energy war hammer": 1200, "fiery spike sword": 1000, "fiery war hammer": 1200, "fire axe": 8000,
+      "fire sword": 4000, "glorious axe": 3000, "guardian shield": 2000, "ice rapier": 1000,
+      "icy spike sword": 1000, "icy war hammer": 1200, "noble armor": 900, "obsidian lance": 500,
+      "phoenix shield": 16000, "queen's sceptre": 20000, "royal helmet": 30000, "shadow sceptre": 10000,
+      "spike sword": 1000, "thaian sword": 16000, "war hammer": 1200, "axe ring": 100, "bronze amulet": 50,
+      "club ring": 100, "elven amulet": 100, "garlic necklace": 50, "life crystal": 50,
+      "magic light wand": 35, "mind stone": 100, "orb": 750, "power ring": 50, "stealth ring": 200,
+      "stone skin amulet": 500, "sword ring": 100, "wand of cosmic energy": 2000, "wand of decay": 1000,
+      "wand of defiance": 6500, "wand of draconia": 1500, "wand of dragonbreath": 200,
+      "wand of everblazing": 6000, "wand of inferno": 3000, "wand of starstorm": 3600,
+      "wand of voodoo": 4400, "wand of vortex": 100
     };
 
     const greenDjinnItems = new Set([
-      "knight axe", "tower shield", "bonebreaker", "dragon hammer", "dreaded cleaver",
-      "onyx flail", "skull staff", "titan axe", "warrior helmet", "knight legs", "knight armor"
+      "ancient shield", "black shield", "bonebreaker", "dark armor", "dark helmet", "dragon hammer",
+      "dreaded cleaver", "earth knight axe", "energy knight axe", "fiery knight axe", "giant sword",
+      "haunted blade", "icy knight axe", "knight armor", "knight axe", "knight legs", "mystic turban",
+      "onyx flail", "ornamented axe", "poison dagger", "scimitar", "serpent sword", "skull staff",
+      "strange helmet", "titan axe", "tower shield", "vampire shield", "warrior helmet",
+      "ankh", "dragon necklace", "dwarven ring", "energy ring", "glacial rod", "hailstorm rod", "life ring",
+      "might ring", "moonlight rod", "muck rod", "mysterious fetish", "necrotic rod", "northwind rod",
+      "protection amulet", "ring of healing", "silver amulet", "snakebite rod", "springsprout rod",
+      "strange talisman", "terra rod", "time ring", "underworld rod"
     ]);
 
-    const blueDjinnItems = new Set(Object.keys(prices).filter(i => !greenDjinnItems.has(i)));
+    const blueDjinnItems = new Set(Object.keys(items).filter(i => !greenDjinnItems.has(i)));
 
     function processLoot() {
       const input = document.getElementById("logInput").value;
       const lines = input.split("\n");
       const loot = {};
       const ignored = [];
-      let totalValue = 0;
-      let greenValue = 0;
-      let blueValue = 0;
+      let totalValue = 0, greenValue = 0, blueValue = 0;
 
       lines.forEach(line => {
-        const match = line.match(/(\d+)x\s+(.+?)\./i);
+        const match = line.match(/(\d+)x\s+(.+?)(?:\.|$)/i);
         if (match) {
           const qty = parseInt(match[1]);
           const item = match[2].trim().toLowerCase();
-
           if (!loot[item]) loot[item] = 0;
           loot[item] += qty;
         }
@@ -156,13 +176,13 @@
 
       for (const item in loot) {
         const qty = loot[item];
-        const price = prices[item];
+        const price = items[item];
         if (price != null) {
           const value = qty * price;
           totalValue += value;
           if (greenDjinnItems.has(item)) {
             greenValue += value;
-          } else if (blueDjinnItems.has(item)) {
+          } else {
             blueValue += value;
           }
         } else {
@@ -174,22 +194,22 @@
       html += `<div class="summary" style="color:green">Green Djinn Value: ${greenValue.toLocaleString()} gp</div>`;
       html += `<div class="summary" style="color:blue">Blue Djinn Value: ${blueValue.toLocaleString()} gp</div>`;
 
-      html += "<h2>Loot Summary</h2><table><tr><th>Item</th><th>Quantity</th><th>Price per Item</th><th>Total Value</th></tr>";
+      html += "<h2>Loot Summary</h2><table><tr><th>Item</th><th>Quantity</th><th>Price</th><th>Total</th></tr>";
       for (const item in loot) {
         const qty = loot[item];
-        const price = prices[item];
+        const price = items[item];
         const value = price != null ? qty * price : 0;
         html += `<tr>
-                  <td>${item}</td>
-                  <td>${qty}</td>
-                  <td>${price != null ? price.toLocaleString() + " gp" : '<span style="color:red">N/A</span>'}</td>
-                  <td>${price != null ? value.toLocaleString() + " gp" : '<span style="color:red">Ignored</span>'}</td>
-                </tr>`;
+          <td>${item}</td>
+          <td>${qty}</td>
+          <td>${price != null ? price.toLocaleString() + " gp" : '<span style="color:red">N/A</span>'}</td>
+          <td>${price != null ? value.toLocaleString() + " gp" : '<span style="color:red">Ignored</span>'}</td>
+        </tr>`;
       }
       html += "</table>";
 
       if (ignored.length > 0) {
-        html += `<div class="ignored"><strong>Ignored items (not in price list):</strong><br>${ignored.join(", ")}</div>`;
+        html += `<div class="ignored"><strong>Ignored items:</strong> ${ignored.join(", ")}</div>`;
       }
 
       resultsDiv.innerHTML = html;
