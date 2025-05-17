@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Djinn Loot Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+      color: #000;
+      transition: background 0.3s, color 0.3s;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      background: #fff;
+      color: #000;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background: #eee;
+    }
+    .summary {
+      font-weight: bold;
+      font-size: 18px;
+      margin-top: 20px;
+    }
+    .ignored {
+      color: red;
+      margin-top: 20px;
+    }
+
+    /* Dark mode styles */
+    body.dark {
+      background: #121212;
+      color: #f4f4f4;
+    }
+    body.dark textarea {
+      background: #1e1e1e;
+      color: #f4f4f4;
+      border: 1px solid #555;
+    }
+    body.dark th {
+      background: #333;
+    }
+    body.dark td, body.dark table {
+      border-color: #555;
+    }
+
+    .toggle-dark {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <button class="toggle-dark" onclick="toggleDarkMode()" title="Toggle Dark Mode" id="darkModeBtn">🌙</button>
+
+  <h1>Djinn Loot Tracker</h1>
+  <p>Paste your loot log below:</p>
+  <textarea id="logInput" placeholder="11:10 Retrieved 23x knight axe."></textarea>
+  <br>
+  <button onclick="processLoot()">Analyze Loot</button>
+
+  <div id="results"></div>
+
+  <script>
+    // Dark mode toggle with icon change
+    function toggleDarkMode() {
+      const body = document.body;
+      const btn = document.getElementById('darkModeBtn');
+      const isDark = body.classList.toggle('dark');
+      localStorage.setItem('darkMode', isDark ? 'on' : 'off');
+      btn.textContent = isDark ? '☀️' : '🌙';
+    }
+
+    // Restore theme preference on load
+    window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('darkMode') === 'on') {
+        document.body.classList.add('dark');
+        document.getElementById('darkModeBtn').textContent = '☀️';
+      }
+    });
+
+    // Price map
+    const prices = {
+      "knight axe": 2000,
+      "tower shield": 8000,
+      "bonebreaker": 10000,
+      "dragon hammer": 2000,
+      "dreaded cleaver": 15000,
+      "onyx flail": 22000,
+      "skull staff": 6000,
+      "titan axe": 4000,
+      "warrior helmet": 5000,
+      "knight legs": 5000,
+      "knight armor": 5000
+    };
+
+    const greenDjinnItems = new Set([
+      "knight axe", "tower shield", "bonebreaker", "dragon hammer", "dreaded cleaver",
+      "onyx flail", "skull staff", "titan axe", "warrior helmet", "knight legs", "knight armor"
+    ]);
+
+    const blueDjinnItems = new Set(Object.keys(prices).filter(i => !greenDjinnItems.has(i)));
+
+    function processLoot() {
+      const input = document.getElementById("logInput").value;
+      const lines = input.split("\n");
+      const loot = {};
+      const ignored = [];
+      let totalValue = 0;
+      let greenValue = 0;
+      let blueValue = 0;
+
+      lines.forEach(line => {
+        const match = line.match(/(\d+)x\s+(.+?)\./i);
+        if (match) {
+          const qty = parseInt(match[1]);
+          const item = match[2].trim().toLowerCase();
+
+          if (!loot[item]) loot[item] = 0;
+          loot[item] += qty;
+        }
+      });
+
+      const resultsDiv = document.getElementById("results");
+      if (Object.keys(loot).length === 0) {
+        resultsDiv.innerHTML = "<p>No valid loot found.</p>";
+        return;
+      }
+
+      let html = "";
+
+      for (const item in loot) {
+        const qty = loot[item];
+        const price = prices[item];
+        if (price != null) {
+          const value = qty * price;
+          totalValue += value;
+          if (greenDjinnItems.has(item)) {
+            greenValue += value;
+          } else if (blueDjinnItems.has(item)) {
+            blueValue += value;
+          }
+        } else {
+          ignored.push(item);
+        }
+      }
+
+      html += `<div class="summary">Total Value: ${totalValue.toLocaleString()} gp</div>`;
+      html += `<div class="summary" style="color:green">Green Djinn Value: ${greenValue.toLocaleString()} gp</div>`;
+      html += `<div class="summary" style="color:blue">Blue Djinn Value: ${blueValue.toLocaleString()} gp</div>`;
+
+      html += "<h2>Loot Summary</h2><table><tr><th>Item</th><th>Quantity</th><th>Price per Item</th><th>Total Value</th></tr>";
+      for (const item in loot) {
+        const qty = loot[item];
+        const price = prices[item];
+        const value = price != null ? qty * price : 0;
+        html += `<tr>
+                  <td>${item}</td>
+                  <td>${qty}</td>
+                  <td>${price != null ? price.toLocaleString() + " gp" : '<span style="color:red">N/A</span>'}</td>
+                  <td>${price != null ? value.toLocaleString() + " gp" : '<span style="color:red">Ignored</span>'}</td>
+                </tr>`;
+      }
+      html += "</table>";
+
+      if (ignored.length > 0) {
+        html += `<div class="ignored"><strong>Ignored items (not in price list):</strong><br>${ignored.join(", ")}</div>`;
+      }
+
+      resultsDiv.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
